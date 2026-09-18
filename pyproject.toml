@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lmcache-service-plugin-example"
+version = "0.1.0"
+description = "Example out-of-tree LMCache server service plugin with plugin-owned gRPC and ZMQ protocols"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{name = "LMCache contributors"}]
+dependencies = [
+  "grpcio>=1.78",
+  "msgspec>=0.18",
+  "protobuf>=6.31.1,<7",
+  "pyzmq>=25",
+]
+
+[project.optional-dependencies]
+dev = [
+  "grpcio-tools>=1.78",
+  "pytest>=8",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+lmcache-service-plugin-client = "lmcache_service_plugin_example.client:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"lmcache_service_plugin_example.protos" = ["*.proto", "*.pyi"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+extend-exclude = [
+  "src/lmcache_service_plugin_example/protos/example_service_pb2.py",
+  "src/lmcache_service_plugin_example/protos/example_service_pb2.pyi",
+  "src/lmcache_service_plugin_example/protos/example_service_pb2_grpc.py",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lmcache_service_plugin_example"]

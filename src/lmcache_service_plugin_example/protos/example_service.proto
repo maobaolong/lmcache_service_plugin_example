@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package lmcache_service_plugin_example.v1;
+
+service ExampleService {
+  rpc Echo(EchoRequest) returns (EchoReply);
+  rpc Health(HealthRequest) returns (HealthReply);
+}
+
+message EchoRequest {
+  string text = 1;
+  string tag = 2;
+}
+
+message EchoReply {
+  string text = 1;
+  string tag = 2;
+  uint64 count = 3;
+}
+
+message HealthRequest {}
+
+message HealthReply {
+  bool ok = 1;
+  string message = 2;
+}
