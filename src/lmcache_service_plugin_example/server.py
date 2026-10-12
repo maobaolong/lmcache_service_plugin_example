@@ -10,9 +10,10 @@ from typing import Any
 import grpc
 
 # First Party
-from lmcache.v1.multiprocess.server_module import (
-    ServerModuleBuildContext,
-    ServerModuleComponents,
+from lmcache.v1.multiprocess.engine_module import (
+    DiscoverableModule,
+    EngineModule,
+    ModuleBuildContext,
 )
 
 # Local
@@ -22,13 +23,23 @@ from .zmq_service import ZmqEchoService
 DEFAULT_ZMQ_BIND_URL = "tcp://127.0.0.1:6011"
 
 
-class ExampleServiceModule:
+class ExampleServiceModule(DiscoverableModule):
     """LMCache module wrapper that owns service lifecycle and status.
 
     Args:
         lmcache_context: Shared LMCache server context.
         config: Plugin-specific JSON config from ``--server-module``.
     """
+
+    module_name = "lmcache_service_plugin_example"
+
+    @classmethod
+    def create(cls, build_ctx: ModuleBuildContext) -> EngineModule | None:
+        """Construct the plugin through LMCache's shared module contract."""
+        return cls(
+            build_ctx.engine_context,
+            dict(build_ctx.config_for(cls)),
+        )
 
     def __init__(self, lmcache_context: Any, config: dict[str, Any]) -> None:
         self._lmcache_context = lmcache_context
@@ -60,7 +71,7 @@ class ExampleServiceModule:
             self._zmq_service.close()
             self._zmq_service = None
 
-    def register_grpc_service(self, server: grpc.Server) -> None:
+    def register_grpc_services(self, server: grpc.Server) -> None:
         """Register the plugin-owned generated gRPC service.
 
         Args:
@@ -73,7 +84,7 @@ class ExampleServiceModule:
             prefix=str(self._config.get("prefix", "plugin")),
         )
 
-    def register_zmq_service(self, server: Any) -> None:
+    def register_zmq_services(self, server: Any) -> None:
         """Start the plugin-owned ZMQ sidecar service.
 
         Args:
@@ -89,22 +100,3 @@ class ExampleServiceModule:
             prefix=str(self._config.get("prefix", "plugin")),
         )
         self._zmq_service.start()
-
-
-def build_server_modules(ctx: ServerModuleBuildContext) -> ServerModuleComponents:
-    """Build LMCache extension components for this package.
-
-    Args:
-        ctx: Build context supplied by LMCache after parsing
-            ``--server-module``.
-
-    Returns:
-        A module for status/lifecycle plus transport-specific registrars for
-        package-owned gRPC and ZMQ services.
-    """
-    module = ExampleServiceModule(ctx.server_context, ctx.config)
-    return ServerModuleComponents(
-        modules=[module],
-        grpc_service_registrars=[module.register_grpc_service],
-        zmq_service_registrars=[module.register_zmq_service],
-    )

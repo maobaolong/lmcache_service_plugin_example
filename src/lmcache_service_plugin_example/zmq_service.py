@@ -21,7 +21,7 @@ class ZmqEchoService:
 
     Args:
         lmcache_context: Shared LMCache server context supplied to the plugin
-            factory.
+            module.
         bind_url: ZMQ endpoint for the sidecar service.
         prefix: Prefix added to each echo response.
     """

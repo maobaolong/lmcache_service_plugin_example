@@ -20,7 +20,7 @@ class ExampleServiceServicer(example_service_pb2_grpc.ExampleServiceServicer):
 
     Args:
         lmcache_context: Shared LMCache server context supplied to the plugin
-            factory.
+            module.
         prefix: Prefix added to each echo response so users can verify the
             plugin service handled the request.
     """

@@ -6,8 +6,8 @@ It demonstrates the preferred pattern for plugin-owned services and protocols:
 - the plugin owns `src/lmcache_service_plugin_example/protos/example_service.proto`
 - the plugin owns the generated gRPC client/server stubs
 - the plugin owns a ZMQ sidecar protocol defined with `msgspec`
-- LMCache only imports `build_server_modules()` from this package and calls the
-  service registrar for the selected transport
+- LMCache explicitly imports this package's `DiscoverableModule` subclass and
+  calls the service registrar method for the selected transport
 
 The `SERVER_MODULE_CALL(method, payload)` envelope is still useful for small
 control-plane calls, but this example intentionally uses first-class
@@ -28,9 +28,9 @@ src/lmcache_service_plugin_example/
 
 ## Install against an LMCache checkout
 
-Use an LMCache checkout that includes `ServerModuleComponents` and
-transport-specific service registrars. Install LMCache first so its Python
-runtime dependencies, including `torch`, are available.
+Use an LMCache checkout that includes the unified external
+`DiscoverableModule` API. Install LMCache first so its Python runtime
+dependencies, including `torch`, are available.
 
 ```bash
 cd /path/to/LMCache
@@ -69,7 +69,6 @@ lmcache server \
   --port 65432 \
   --server-module '{
     "module_path": "lmcache_service_plugin_example.server",
-    "factory_name": "build_server_modules",
     "config": {"prefix": "example"}
   }'
 ```
@@ -106,7 +105,6 @@ lmcache server \
   --port 65432 \
   --server-module '{
     "module_path": "lmcache_service_plugin_example.server",
-    "factory_name": "build_server_modules",
     "config": {
       "prefix": "example",
       "zmq_bind_url": "tcp://127.0.0.1:6011"
@@ -138,14 +136,16 @@ After installing LMCache and this plugin, run:
 uv run --extra dev pytest -q
 ```
 
-If you want to test against a source checkout without installing LMCache into
-the plugin venv, run the tests with LMCache's Python environment:
+To test this branch against the matching LMCache PR checkout, place the two
+repositories next to each other, activate a Python 3.12 environment containing
+LMCache's development dependencies, and run:
 
 ```bash
-PYTHONPATH=/path/to/lmcache_service_plugin_example/src:/path/to/LMCache \
-  /path/to/LMCache/.venv/bin/python -m pytest -q
+PYTHONPATH="$PWD/src:../LMCache" python -m pytest -vv \
+  -o log_cli=true --log-cli-level=INFO
 ```
 
-The tests instantiate the plugin-owned generated gRPC service directly and
-start the package-owned ZMQ sidecar through the same registrars LMCache calls at
-server startup.
+The tests compose the plugin with LMCache's built-in dependency graph, then
+exercise the plugin-owned generated gRPC service and package-owned ZMQ sidecar
+through the same registrars LMCache calls at server startup. The composition
+test also captures LMCache's module count and dependency log.
